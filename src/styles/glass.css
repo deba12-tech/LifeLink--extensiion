@@ -1,0 +1,4 @@
+/* src/styles/glass.css */
+.glass {
+  @apply bg-white/30 backdrop-blur-xs rounded-xl shadow-glass border border-white/20;
+}

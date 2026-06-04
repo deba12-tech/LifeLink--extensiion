@@ -1,0 +1,8 @@
+{
+  "stats": [
+    { "id": 1, "label": "Focus Score", "value": "87%" },
+    { "id": 2, "label": "Active Time", "value": "2h 45m" },
+    { "id": 3, "label": "Distractions", "value": "3" },
+    { "id": 4, "label": "Productive Tabs", "value": "12" }
+  ]
+}

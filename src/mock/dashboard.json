@@ -1,0 +1,39 @@
+{
+  "focusScore": 87,
+  "stats": [
+    { "title": "Sessions", "value": 42, "icon": "User" },
+    { "title": "Time (min)", "value": 123, "icon": "Clock" },
+    { "title": "Clicks", "value": 256, "icon": "MousePointer" }
+  ],
+  "categories": [
+    { "name": "Social", "value": 40 },
+    { "name": "Productivity", "value": 30 },
+    { "name": "News", "value": 15 },
+    { "name": "Entertainment", "value": 15 }
+  ],
+  "categoryBreakdown": [
+    { "category": "Social", "time": 120 },
+    { "category": "Productivity", "time": 240 },
+    { "category": "News", "time": 45 },
+    { "category": "Entertainment", "time": 90 }
+  ],
+  "attentionFlow": [
+    { "time": "08:00", "event": "Opened Gmail" },
+    { "time": "08:15", "event": "Read article" },
+    { "time": "08:30", "event": "Checked Twitter" }
+  ],
+  "receipt": {
+    "site": "Amazon",
+    "amount": "$49.99",
+    "date": "2024-03-12",
+    "icon": "ShoppingBag"
+  },
+  "continue": {
+    "title": "Resume reading 'Design Systems'",
+    "thumbnail": "continue.png"
+  },
+  "intelligence": {
+    "summary": "High focus on productivity tabs",
+    "icon": "Brain"
+  }
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LifeLink UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <script>
+      (function() {
+        try {
+          const savedTheme = localStorage.getItem('theme') || 'pastel';
+          let resolved = savedTheme;
+          if (savedTheme === 'system') {
+            resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark-glass' : 'pastel';
+          }
+          const className = (resolved === 'dark-glass' || resolved === 'midnight') ? 'theme-dark-glass' : 'theme-pastel';
+          document.documentElement.classList.add(className);
+          document.body.classList.add(className);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

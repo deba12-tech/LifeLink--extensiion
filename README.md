@@ -36,13 +36,13 @@ Modern users spend hours inside web browsers every day, yet we rarely have a cle
 ## Screenshots
 
 ### Dashboard
-![LifeLink Dashboard](assets/screenshots/dashboard.png)
+![LifeLink Dashboard](assets/Screenshots/dashboard.png)
 
 ### Popup
-![LifeLink Popup](assets/screenshots/popupwindow.png)
+![LifeLink Popup](assets/Screenshots/popupwindow.png)
 
 ### Settings
-![LifeLink Settings](assets/screenshots/settings.png)
+![LifeLink Settings](assets/Screenshots/settings.png)
 
 ## 6. Architecture
 

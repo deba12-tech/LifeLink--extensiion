@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { syncStorageItem } from '../utils/storage';
-import { calculateAnalytics, formatDuration, ActivitySession } from '../lib/activityAnalytics';
+import { calculateAnalytics, formatDuration, ActivitySession, getLocalDateString } from '../lib/activityAnalytics';
 import { classifyCategory } from '../lib/categoryClassifier';
 
 const shouldIgnore = (url: string, ignoredSites: string[]): boolean => {
@@ -174,6 +174,80 @@ const Popup: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleLoadMockData = () => {
+    const todayStr = getLocalDateString();
+    const now = Date.now();
+    const mockSessions: ActivitySession[] = [
+      {
+        id: 'mock-deep-1',
+        url: 'https://github.com/deba12-tech/LifeLink--extensiion',
+        domain: 'github.com',
+        title: 'deba12-tech/LifeLink--extensiion',
+        category: 'Deep Work',
+        startTime: now - 5 * 3600 * 1000 - 30 * 60 * 1000,
+        endTime: now - 3 * 3600 * 1000 - 15 * 60 * 1000,
+        durationMs: 2 * 3600 * 1000 + 15 * 60 * 1000, // 2h 15m
+        date: todayStr
+      },
+      {
+        id: 'mock-deep-2',
+        url: 'https://figma.com/file/lifelink-design-system',
+        domain: 'figma.com',
+        title: 'LifeLink Design System - Figma',
+        category: 'Deep Work',
+        startTime: now - 3 * 3600 * 1000,
+        endTime: now - 1 * 3600 * 1000 - 50 * 60 * 1000,
+        durationMs: 1 * 3600 * 1000 + 10 * 60 * 1000, // 1h 10m
+        date: todayStr
+      },
+      {
+        id: 'mock-learn-1',
+        url: 'https://youtube.com/watch?v=react-patterns',
+        domain: 'youtube.com',
+        title: 'React Design Patterns 2026 - YouTube',
+        category: 'Learning',
+        startTime: now - 1 * 3600 * 1000 - 45 * 60 * 1000,
+        endTime: now - 1 * 3600 * 1000,
+        durationMs: 45 * 60 * 1000, // 45m
+        date: todayStr
+      },
+      {
+        id: 'mock-learn-2',
+        url: 'https://stackoverflow.com/questions/typescript-generics',
+        domain: 'stackoverflow.com',
+        title: 'How to use advanced TypeScript generics - Stack Overflow',
+        category: 'Learning',
+        startTime: now - 50 * 60 * 1000,
+        endTime: now - 30 * 60 * 1000,
+        durationMs: 20 * 60 * 1000, // 20m
+        date: todayStr
+      },
+      {
+        id: 'mock-casual-1',
+        url: 'https://twitter.com/home',
+        domain: 'twitter.com',
+        title: 'Home / X',
+        category: 'Casual',
+        startTime: now - 25 * 60 * 1000,
+        endTime: now - 10 * 60 * 1000,
+        durationMs: 15 * 60 * 1000, // 15m
+        date: todayStr
+      }
+    ];
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ activitySessions: mockSessions }, () => {
+        setSessions(mockSessions);
+        showToast('Demo focus day simulated successfully!');
+      });
+    } else {
+      localStorage.setItem('activitySessions', JSON.stringify(mockSessions));
+      setSessions(mockSessions);
+      showToast('Demo focus day simulated successfully!');
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
   const handleTogglePause = () => {
     const nextState = !isPaused;
     setIsPaused(nextState);
@@ -260,14 +334,19 @@ const Popup: React.FC = () => {
 
       <main className="flex-1 px-6 overflow-y-auto no-scrollbar pb-4 space-y-4 z-10">
         {isEmpty ? (
-          <div className="glass-card-sm p-6 text-center flex flex-col items-center justify-center space-y-4 border border-white/50 my-2 relative overflow-hidden">
-            <div className="w-12 h-12 rounded-2xl bg-sky/15 flex items-center justify-center text-secondary mb-1 border border-white/40 shadow-sm animate-pulse">
-              <span className="material-symbols-outlined text-2xl">hourglass_empty</span>
-            </div>
-            <h3 className="text-sm font-bold text-primary-custom">Your space is quiet</h3>
+          <div className="empty-state-card p-6 text-center flex flex-col items-center justify-center space-y-4 rounded-[22px] my-2">
+            <div className="empty-state-orb w-12 h-12 mb-1"></div>
+            <h3 className="text-base font-bold text-primary-custom">Your Space is Serene</h3>
             <p className="text-[11px] text-secondary-custom leading-relaxed max-w-[240px]">
-              No local browsing logs recorded today. Start browsing the web to generate focus statistics and receipt logs.
+              LifeLink runs entirely locally to capture your focus. Seed a demo day to preview your metrics.
             </p>
+            <button
+              onClick={handleLoadMockData}
+              className="pastel-button px-5 py-2 flex items-center gap-1.5 hover-lift active:scale-95 text-[10px] font-bold uppercase tracking-wider text-primary-custom cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xs">auto_awesome</span>
+              Seed Demo Day
+            </button>
           </div>
         ) : (
           <>

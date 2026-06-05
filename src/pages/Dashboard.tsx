@@ -79,6 +79,80 @@ const Dashboard: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const handleLoadMockData = () => {
+    const todayStr = getLocalDateString();
+    const now = Date.now();
+    const mockSessions: ActivitySession[] = [
+      {
+        id: 'mock-deep-1',
+        url: 'https://github.com/deba12-tech/LifeLink--extensiion',
+        domain: 'github.com',
+        title: 'deba12-tech/LifeLink--extensiion',
+        category: 'Deep Work',
+        startTime: now - 5 * 3600 * 1000 - 30 * 60 * 1000,
+        endTime: now - 3 * 3600 * 1000 - 15 * 60 * 1000,
+        durationMs: 2 * 3600 * 1000 + 15 * 60 * 1000, // 2h 15m
+        date: todayStr
+      },
+      {
+        id: 'mock-deep-2',
+        url: 'https://figma.com/file/lifelink-design-system',
+        domain: 'figma.com',
+        title: 'LifeLink Design System - Figma',
+        category: 'Deep Work',
+        startTime: now - 3 * 3600 * 1000,
+        endTime: now - 1 * 3600 * 1000 - 50 * 60 * 1000,
+        durationMs: 1 * 3600 * 1000 + 10 * 60 * 1000, // 1h 10m
+        date: todayStr
+      },
+      {
+        id: 'mock-learn-1',
+        url: 'https://youtube.com/watch?v=react-patterns',
+        domain: 'youtube.com',
+        title: 'React Design Patterns 2026 - YouTube',
+        category: 'Learning',
+        startTime: now - 1 * 3600 * 1000 - 45 * 60 * 1000,
+        endTime: now - 1 * 3600 * 1000,
+        durationMs: 45 * 60 * 1000, // 45m
+        date: todayStr
+      },
+      {
+        id: 'mock-learn-2',
+        url: 'https://stackoverflow.com/questions/typescript-generics',
+        domain: 'stackoverflow.com',
+        title: 'How to use advanced TypeScript generics - Stack Overflow',
+        category: 'Learning',
+        startTime: now - 50 * 60 * 1000,
+        endTime: now - 30 * 60 * 1000,
+        durationMs: 20 * 60 * 1000, // 20m
+        date: todayStr
+      },
+      {
+        id: 'mock-casual-1',
+        url: 'https://twitter.com/home',
+        domain: 'twitter.com',
+        title: 'Home / X',
+        category: 'Casual',
+        startTime: now - 25 * 60 * 1000,
+        endTime: now - 10 * 60 * 1000,
+        durationMs: 15 * 60 * 1000, // 15m
+        date: todayStr
+      }
+    ];
+
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ activitySessions: mockSessions }, () => {
+        setSessions(mockSessions);
+        showToast('Demo focus day simulated successfully!');
+      });
+    } else {
+      localStorage.setItem('activitySessions', JSON.stringify(mockSessions));
+      setSessions(mockSessions);
+      showToast('Demo focus day simulated successfully!');
+      window.dispatchEvent(new Event('storage'));
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -663,22 +737,28 @@ const Dashboard: React.FC = () => {
 
         {/* Main Content Layout */}
         {isEmpty ? (
-          <section className="glass-card p-12 text-center flex flex-col items-center justify-center space-y-5 border border-white/50 mb-element-gap relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-lavender via-sky to-peach opacity-80"></div>
-            <div className="w-16 h-16 rounded-2xl bg-sky/15 flex items-center justify-center text-secondary mb-2 border border-white/40 shadow-sm animate-pulse">
-              <span className="material-symbols-outlined text-3xl">hourglass_empty</span>
-            </div>
-            <h3 className="text-xl font-bold text-primary-custom tracking-tight">Your attention dashboard is empty</h3>
-            <p className="text-sm text-secondary-custom max-w-md leading-relaxed">
-              No local browsing logs detected for today. Once you browse the web (e.g. GitHub, YouTube, or general sites), LifeLink will automatically generate your spatial charts and daily internet receipt here.
+          <section className="empty-state-card p-12 text-center flex flex-col items-center justify-center space-y-6 mb-element-gap rounded-[28px]">
+            <div className="empty-state-orb mb-2"></div>
+            <h3 className="text-2xl font-bold text-primary-custom tracking-tight">Your Attention Space is Serene</h3>
+            <p className="text-sm text-secondary-custom max-w-lg leading-relaxed">
+              LifeLink runs entirely locally on this device to map your productive flows, learning loops, and casual breaks. No data has been logged for today yet. Seed a demo focus day to preview your interactive receipt, daily charts, and analytics.
             </p>
-            <div className="flex gap-3 justify-center pt-2">
-              <a href="https://github.com" target="_blank" rel="noreferrer" className="glass-pill px-4 py-2 text-xs font-bold text-secondary-custom hover:bg-white/40 hover:text-primary-custom transition-all flex items-center gap-1.5 border border-white/40">
-                <span className="material-symbols-outlined text-xs">code</span> Browse GitHub
-              </a>
-              <a href="https://youtube.com" target="_blank" rel="noreferrer" className="glass-pill px-4 py-2 text-xs font-bold text-secondary-custom hover:bg-white/40 hover:text-primary-custom transition-all flex items-center gap-1.5 border border-white/40">
-                <span className="material-symbols-outlined text-xs">play_circle</span> Browse YouTube
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+              <button
+                onClick={handleLoadMockData}
+                className="pastel-button px-8 py-3 flex items-center gap-2 hover-lift active:scale-95 text-xs font-bold uppercase tracking-wider text-primary-custom cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">auto_awesome</span>
+                Seed Demo Focus Day
+              </button>
+              <div className="flex gap-3">
+                <a href="https://github.com" target="_blank" rel="noreferrer" className="glass-pill px-5 py-3 text-xs font-bold text-secondary-custom hover:bg-white/40 hover:text-primary-custom transition-all flex items-center gap-1.5 border border-white/40">
+                  <span className="material-symbols-outlined text-xs">code</span> Browse GitHub
+                </a>
+                <a href="https://youtube.com" target="_blank" rel="noreferrer" className="glass-pill px-5 py-3 text-xs font-bold text-secondary-custom hover:bg-white/40 hover:text-primary-custom transition-all flex items-center gap-1.5 border border-white/40">
+                  <span className="material-symbols-outlined text-xs">play_circle</span> Browse YouTube
+                </a>
+              </div>
             </div>
           </section>
         ) : (

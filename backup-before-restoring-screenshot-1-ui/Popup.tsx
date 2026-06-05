@@ -21,7 +21,6 @@ const shouldIgnore = (url: string, ignoredSites: string[]): boolean => {
 
 const Popup: React.FC = () => {
   const [time, setTime] = useState('12:45 PM');
-  const [isLoading, setIsLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(() => {
     const saved = localStorage.getItem('lifelinkSettings');
     if (saved) {
@@ -32,7 +31,7 @@ const Popup: React.FC = () => {
     return false;
   });
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
+  
   // Active theme configuration
   const [currentTheme, setCurrentTheme] = useState(() => {
     const saved = localStorage.getItem('theme') || 'pastel';
@@ -53,13 +52,6 @@ const Popup: React.FC = () => {
 
   // Current active tab state
   const [currentTab, setCurrentTab] = useState<{ title: string; url: string; domain: string; category: string } | null>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 450);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     const updateDark = () => {
@@ -217,19 +209,6 @@ const Popup: React.FC = () => {
   const productivePct = totalActiveTime > 0 ? Math.round(((deepWorkTime + learningTime) / totalActiveTime) * 100) : 0;
   const distractionPct = totalActiveTime > 0 ? 100 - productivePct : 0;
 
-  if (isLoading) {
-    return (
-      <div className={`app-bg relative flex flex-col text-primary-custom w-[380px] h-[520px] mx-auto overflow-hidden rounded-[28px] shadow-2xl p-0 items-center justify-center ${isDarkTheme ? 'theme-dark-glass' : ''}`}>
-        <div className="liquid-blob bg-lavender w-72 h-72 -top-24 -left-20 rounded-full absolute"></div>
-        <div className="liquid-blob bg-sky w-80 h-80 top-32 -right-24 rounded-full absolute"></div>
-        <div className="relative w-10 h-10 flex items-center justify-center z-10">
-          <div className="w-8 h-8 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
-        </div>
-        <p className="text-xs text-secondary-custom font-semibold mt-3 z-10">Reading secure storage...</p>
-      </div>
-    );
-  }
-
   return (
     <div className={`app-bg relative flex flex-col text-primary-custom w-[380px] h-[520px] mx-auto overflow-hidden rounded-[28px] shadow-2xl p-0 ${isDarkTheme ? 'theme-dark-glass' : ''}`}>
       {/* Background Blobs (Dashboard Matching Gradient) */}
@@ -260,13 +239,13 @@ const Popup: React.FC = () => {
 
       <main className="flex-1 px-6 overflow-y-auto no-scrollbar pb-4 space-y-4 z-10">
         {isEmpty ? (
-          <div className="glass-card-sm p-6 text-center flex flex-col items-center justify-center space-y-4 border border-white/50 my-2 relative overflow-hidden">
-            <div className="w-12 h-12 rounded-2xl bg-sky/15 flex items-center justify-center text-secondary mb-1 border border-white/40 shadow-sm animate-pulse">
-              <span className="material-symbols-outlined text-2xl">hourglass_empty</span>
+          <div className="glass-card-sm p-6 text-center flex flex-col items-center justify-center space-y-4 border border-white/50 my-2">
+            <div className="w-12 h-12 rounded-full bg-sky/20 flex items-center justify-center text-secondary mb-1 border border-white/40">
+              <span className="material-symbols-outlined text-2xl">analytics</span>
             </div>
-            <h3 className="text-sm font-bold text-primary-custom">Your space is quiet</h3>
-            <p className="text-[11px] text-secondary-custom leading-relaxed max-w-[240px]">
-              No local browsing logs recorded today. Start browsing the web to generate focus statistics and receipt logs.
+            <h3 className="text-sm font-bold text-primary-custom">Your dashboard is quiet right now</h3>
+            <p className="text-[11px] text-secondary-custom leading-normal max-w-[240px]">
+              Start browsing and LifeLink will build your first digital receipt.
             </p>
           </div>
         ) : (
@@ -295,19 +274,19 @@ const Popup: React.FC = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 animate-fade-up delay-75">
-              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300">
-                <span className="font-data-label text-[10px] text-secondary-custom uppercase">Deep Focus</span>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50">
+                <span className="font-data-label text-[10px] text-secondary-custom uppercase">Deep Work</span>
                 <span className="font-data-value text-secondary text-[16px]">{formatDuration(deepWorkTime)}</span>
               </div>
-              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300">
-                <span className="font-data-label text-[10px] text-secondary-custom uppercase">Leisure Time</span>
+              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50">
+                <span className="font-data-label text-[10px] text-secondary-custom uppercase">Drift Time</span>
                 <span className="font-data-value text-orange-600 text-[16px]">{formatDuration(casualTime)}</span>
               </div>
             </div>
 
             {/* Current Activity Section */}
-            <div className="glass-card-sm p-5 space-y-4 relative overflow-hidden border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300 animate-fade-up delay-100">
+            <div className="glass-card-sm p-5 space-y-4 relative overflow-hidden border border-white/50">
               <div className="flex justify-between items-start">
                 <div className="flex flex-col max-w-[200px]">
                   <span className="font-data-label text-[10px] text-secondary-custom uppercase mb-1">
@@ -320,7 +299,7 @@ const Popup: React.FC = () => {
                 {!isPaused && currentTab && (
                   <div className="bg-sky/35 px-3 py-1 rounded-full border border-white/60">
                     <span className="font-data-label text-[10px] text-secondary-custom font-semibold">
-                      {currentTab.category === 'Deep Work' ? 'Deep Focus' : currentTab.category === 'Learning' ? 'Active Learning' : currentTab.category === 'Casual' ? 'Leisure Browsing' : currentTab.category}
+                      {currentTab.category}
                     </span>
                   </div>
                 )}
@@ -337,8 +316,8 @@ const Popup: React.FC = () => {
                   <div className="h-full bg-peach" style={{ width: `${distractionPct}%` }}></div>
                 </div>
                 <div className="flex justify-between text-[9px] font-data-label opacity-60 tracking-wider">
-                  <span>FOCUS</span>
-                  <span>LEISURE</span>
+                  <span>PRODUCTIVE</span>
+                  <span>DISTRACTION</span>
                 </div>
               </div>
             </div>
@@ -387,7 +366,7 @@ const Popup: React.FC = () => {
       {/* Footer with Microcopy */}
       <footer className="px-6 py-4 flex flex-col gap-2 items-center border-t border-white/20 z-10">
         <p className="font-body-md text-[11px] text-secondary-custom/75 text-center italic">
-          Private by design. Stored locally on this device.
+          Private by design. Stored on this device.
         </p>
         <div className="flex justify-between w-full opacity-50">
           <span className="font-data-label text-[9px] uppercase tracking-[0.2em]">LifeLink Spatial v1.2</span>

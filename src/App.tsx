@@ -4,6 +4,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
 import Popup from './pages/Popup';
 import Settings from './pages/Settings';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Status from './pages/Status';
 import { applyTheme } from './styles/theme';
 
 const App: React.FC = () => {
@@ -32,6 +35,9 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/popup" element={<Popup />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/status" element={<Status />} />
       </Routes>
     </div>
   );

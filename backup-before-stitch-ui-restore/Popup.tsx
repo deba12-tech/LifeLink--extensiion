@@ -295,19 +295,19 @@ const Popup: React.FC = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 animate-fade-up delay-75">
-              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50">
                 <span className="font-data-label text-[10px] text-secondary-custom uppercase">Deep Focus</span>
                 <span className="font-data-value text-secondary text-[16px]">{formatDuration(deepWorkTime)}</span>
               </div>
-              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="glass-card-sm p-4 flex flex-col gap-1 border border-white/50">
                 <span className="font-data-label text-[10px] text-secondary-custom uppercase">Leisure Time</span>
                 <span className="font-data-value text-orange-600 text-[16px]">{formatDuration(casualTime)}</span>
               </div>
             </div>
 
             {/* Current Activity Section */}
-            <div className="glass-card-sm p-5 space-y-4 relative overflow-hidden border border-white/50 hover-lift shadow-sm hover:shadow-md transition-all duration-300 animate-fade-up delay-100">
+            <div className="glass-card-sm p-5 space-y-4 relative overflow-hidden border border-white/50">
               <div className="flex justify-between items-start">
                 <div className="flex flex-col max-w-[200px]">
                   <span className="font-data-label text-[10px] text-secondary-custom uppercase mb-1">
@@ -320,7 +320,7 @@ const Popup: React.FC = () => {
                 {!isPaused && currentTab && (
                   <div className="bg-sky/35 px-3 py-1 rounded-full border border-white/60">
                     <span className="font-data-label text-[10px] text-secondary-custom font-semibold">
-                      {currentTab.category === 'Deep Work' ? 'Deep Focus' : currentTab.category === 'Learning' ? 'Active Learning' : currentTab.category === 'Casual' ? 'Leisure Browsing' : currentTab.category}
+                      {currentTab.category === 'Deep Work' ? 'Deep Focus' : currentTab.category === 'Learning' ? 'Active Learning' : 'Leisure Browsing'}
                     </span>
                   </div>
                 )}

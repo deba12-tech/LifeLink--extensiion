@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { syncStorageItem } from '../utils/storage';
-import { calculateAnalytics, formatDuration, ActivitySession, getLocalDateString, mergeCloseSessions } from '../lib/activityAnalytics';
+import { calculateAnalytics, formatDuration, ActivitySession, getLocalDateString } from '../lib/activityAnalytics';
 import { classifyCategory } from '../lib/categoryClassifier';
 
 interface ContinueCardItem {
@@ -22,7 +22,6 @@ const getDomain = (urlStr: string): string => {
 };
 
 const Dashboard: React.FC = () => {
-  const [filter, setFilter] = useState<'today' | 'yesterday' | 'week'>('today');
   const [time, setTime] = useState('12:45 PM');
   const [driftPos, setDriftPos] = useState({ x: 0, y: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -213,7 +212,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Calculate live analytics
-  const analytics = calculateAnalytics(sessions, filter);
+  const analytics = calculateAnalytics(sessions);
   const {
     totalActiveTime,
     deepWorkTime,
@@ -422,21 +421,7 @@ const Dashboard: React.FC = () => {
   const deepPct = totalActiveTime > 0 ? Math.round((deepWorkTime / totalActiveTime) * 100) : 0;
   const casualPct = totalActiveTime > 0 ? (100 - learningPct - deepPct) : 0;
 
-  const getFilteredSessionsForUniqueDomains = () => {
-    const valid = sessions.filter(s => s.durationMs >= 5000);
-    const merged = mergeCloseSessions(valid);
-    if (filter === 'today') {
-      return merged.filter(s => s.date === getLocalDateString());
-    } else if (filter === 'yesterday') {
-      const yesterday = new Date(Date.now() - 86400000);
-      const yesterdayDateString = getLocalDateString(yesterday.getTime());
-      return merged.filter(s => s.date === yesterdayDateString);
-    } else {
-      const oneWeekAgo = Date.now() - 7 * 86400000;
-      return merged.filter(s => s.startTime >= oneWeekAgo);
-    }
-  };
-  const uniqueDomains = Array.from(new Set(getFilteredSessionsForUniqueDomains().map(s => s.domain))).length;
+  const uniqueDomains = Array.from(new Set(sessions.filter(s => s.date === getLocalDateString()).map(s => s.domain))).length;
 
   if (isLoading) {
     return (
@@ -515,7 +500,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="hidden md:flex flex-1 max-w-xs mx-6 search-focus">
+          <div className="hidden md:flex flex-1 max-w-xs mx-6">
             <div className="w-full inner-recessed rounded-full px-4 py-1.5 flex items-center gap-2 border border-white/30 focus-within:bg-white/40 transition-all">
               <span className="material-symbols-outlined text-secondary-custom" style={{ fontSize: '18px' }}>search</span>
               <input 
@@ -548,66 +533,29 @@ const Dashboard: React.FC = () => {
         </header>
 
         {/* Hero Section */}
-        <section className="mb-element-gap animate-fade-up">
-          <div className="glass-card p-10 flex flex-col md:flex-row items-center justify-between gap-12 group hover:shadow-2xl transition-all duration-500 border border-white/60 dark:border-white/10 shadow-[0_20px_50px_rgba(90,103,216,0.1)] hover:shadow-[0_30px_60px_rgba(90,103,216,0.15)] relative overflow-hidden">
-            <div className="absolute -inset-x-20 -inset-y-20 bg-gradient-to-tr from-lavender/10 via-sky/15 to-transparent rounded-[80px] pointer-events-none opacity-60"></div>
-            
-            <div className="space-y-6 max-w-xl text-center md:text-left relative z-10">
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <div className="inline-block px-3 py-1 glass-pill text-[10px] font-bold uppercase tracking-[0.2em] text-secondary-custom">
-                  Digital Day Overview {lastUpdated && `• Sync ${lastUpdated}`}
-                </div>
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1 p-0.5 rounded-full bg-white/30 dark:bg-white/5 border border-white/50 dark:border-white/10 shadow-sm">
-                  <button
-                    onClick={() => setFilter('today')}
-                    className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      filter === 'today'
-                        ? 'bg-primary text-white shadow-md'
-                        : 'text-secondary-custom hover:bg-white/40'
-                    }`}
-                  >
-                    Today
-                  </button>
-                  <button
-                    onClick={() => setFilter('yesterday')}
-                    className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      filter === 'yesterday'
-                        ? 'bg-primary text-white shadow-md'
-                        : 'text-secondary-custom hover:bg-white/40'
-                    }`}
-                  >
-                    Yesterday
-                  </button>
-                  <button
-                    onClick={() => setFilter('week')}
-                    className={`px-3 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider transition-all duration-300 ${
-                      filter === 'week'
-                        ? 'bg-primary text-white shadow-md'
-                        : 'text-secondary-custom hover:bg-white/40'
-                    }`}
-                  >
-                    This Week
-                  </button>
-                </div>
+        <section className="mb-element-gap">
+          <div className="glass-card p-10 flex flex-col md:flex-row items-center justify-between gap-12 group hover:shadow-2xl transition-all duration-500">
+            <div className="space-y-6 max-w-xl text-center md:text-left">
+              <div className="inline-block px-3 py-1 glass-pill text-[10px] font-bold uppercase tracking-[0.2em] text-secondary-custom">
+                Digital Day Overview {lastUpdated && `• Sync ${lastUpdated}`}
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-primary-custom tracking-tight leading-tight">Good evening, Debangan</h1>
+              <h1 className="text-4xl md:text-5xl font-bold text-primary-custom tracking-tight">Good evening, Debangan</h1>
               <div className="space-y-2">
                 <p className="text-lg text-secondary-custom leading-relaxed">
                   {isEmpty ? (
                     <span>Welcome to LifeLink! Start browsing to build your first digital receipt and analyze your focus score.</span>
                   ) : (
-                    <span>Your browser focus score {filter === 'today' ? 'today' : filter === 'yesterday' ? 'yesterday' : 'this week'} is <span className="text-secondary font-bold">{focusScore}%</span>. You spent {formatDuration(totalActiveTime)} online across various projects.</span>
+                    <span>Your browser focus score today is <span className="text-secondary font-bold">{focusScore}%</span>. You spent {formatDuration(totalActiveTime)} online across various projects.</span>
                   )}
                 </p>
               </div>
             </div>
             {/* Premium Progress Ring */}
-            <div className="relative w-52 h-52 flex items-center justify-center relative z-10">
+            <div className="relative w-52 h-52 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90">
                 <circle className="text-white/40" cx="104" cy="104" fill="transparent" r="88" stroke="currentColor" strokeWidth="12"></circle>
                 <circle 
-                  className="text-secondary transition-all duration-1000 ease-out progress-bar-anim" 
+                  className="text-secondary transition-all duration-1000 ease-out" 
                   cx="104" 
                   cy="104" 
                   fill="transparent" 
@@ -620,8 +568,8 @@ const Dashboard: React.FC = () => {
                 ></circle>
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-5xl font-bold text-primary-custom tracking-tighter">{isEmpty ? '0' : focusScore}</span>
-                <span className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.2em] mt-1">Focus Score</span>
+                <span className="text-5xl font-bold text-primary-custom">{isEmpty ? '0' : focusScore}</span>
+                <span className="text-[10px] font-bold text-secondary-custom uppercase tracking-widest mt-1">Focus Score</span>
               </div>
             </div>
           </div>
@@ -629,33 +577,33 @@ const Dashboard: React.FC = () => {
 
         {/* Overview Grid */}
         <section className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-element-gap">
-          <div className="glass-card-sm p-6 group hover-lift animate-fade-up delay-75 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-lavender/60 to-lavender/30 flex items-center justify-center text-primary-custom mb-4 border border-white/50 shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <div className="glass-card-sm p-6 group hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl bg-lavender/50 flex items-center justify-center text-primary-custom mb-4 border border-white/40">
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>timer</span>
             </div>
-            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.15em] mb-1.5">Active Time</p>
-            <p className="text-2xl font-bold text-primary-custom tracking-tight">{formatDuration(totalActiveTime)}</p>
+            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-wider mb-1">Active Time</p>
+            <p className="text-2xl font-bold text-primary-custom">{formatDuration(totalActiveTime)}</p>
           </div>
-          <div className="glass-card-sm p-6 group hover-lift animate-fade-up delay-100 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-mint/60 to-mint/30 flex items-center justify-center text-primary-custom mb-4 border border-white/50 shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <div className="glass-card-sm p-6 group hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl bg-mint/50 flex items-center justify-center text-primary-custom mb-4 border border-white/40">
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>bolt</span>
             </div>
-            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.15em] mb-1.5">Deep Focus</p>
-            <p className="text-2xl font-bold text-primary-custom tracking-tight">{formatDuration(deepWorkTime)}</p>
+            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-wider mb-1">Deep Focus</p>
+            <p className="text-2xl font-bold text-primary-custom">{formatDuration(deepWorkTime)}</p>
           </div>
-          <div className="glass-card-sm p-6 group hover-lift animate-fade-up delay-150 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-peach/60 to-peach/30 flex items-center justify-center text-primary-custom mb-4 border border-white/50 shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <div className="glass-card-sm p-6 group hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl bg-peach/50 flex items-center justify-center text-primary-custom mb-4 border border-white/40">
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>explore</span>
             </div>
-            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.15em] mb-1.5">Leisure Time</p>
-            <p className="text-2xl font-bold text-primary-custom tracking-tight">{formatDuration(casualTime)}</p>
+            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-wider mb-1">Leisure Time</p>
+            <p className="text-2xl font-bold text-primary-custom">{formatDuration(casualTime)}</p>
           </div>
-          <div className="glass-card-sm p-6 group hover-lift animate-fade-up delay-200 border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky/60 to-sky/30 flex items-center justify-center text-primary-custom mb-4 border border-white/50 shadow-sm transition-transform duration-300 group-hover:scale-110">
+          <div className="glass-card-sm p-6 group hover:translate-y-[-4px] hover:shadow-lg transition-all duration-300">
+            <div className="w-10 h-10 rounded-xl bg-sky/50 flex items-center justify-center text-primary-custom mb-4 border border-white/40">
               <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>school</span>
             </div>
-            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.15em] mb-1.5">Top Category</p>
-            <p className="text-2xl font-bold text-primary-custom tracking-tight">
+            <p className="text-[10px] font-bold text-secondary-custom uppercase tracking-wider mb-1">Top Category</p>
+            <p className="text-2xl font-bold text-primary-custom">
               {isEmpty ? 'None' : (mainCategory === 'Casual' ? 'Leisure' : mainCategory === 'Learning' ? 'Active Learning' : 'Deep Focus')}
             </p>
           </div>
@@ -686,13 +634,13 @@ const Dashboard: React.FC = () => {
             {/* Left Side: Attention & Flow */}
             <div className="lg:col-span-8 flex flex-col gap-element-gap">
               {/* Attention Breakdown */}
-              <div className="glass-card p-8 animate-fade-up delay-75 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+              <div className="glass-card p-8">
                 <div className="flex justify-between items-center mb-10">
-                  <h2 className="text-xl font-bold text-primary-custom tracking-tight">Where your attention went</h2>
+                  <h2 className="text-xl font-bold text-primary-custom">Where your attention went</h2>
                   <button onClick={() => showToast('Opening Attention Details breakdown...')} className="material-symbols-outlined text-secondary-custom hover:text-primary-custom transition-colors">more_horiz</button>
                 </div>
                 <div className="flex flex-col md:flex-row gap-16 items-center">
-                  <div className="relative w-48 h-48 flex-shrink-0 animate-scale-in delay-200">
+                  <div className="relative w-48 h-48 flex-shrink-0">
                     <svg className="w-full h-full" viewBox="0 0 36 36">
                       <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="4"></circle>
                       {learningPct > 0 && (
@@ -706,29 +654,29 @@ const Dashboard: React.FC = () => {
                       )}
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center flex-col">
-                      <span className="text-[9px] font-bold text-secondary-custom uppercase tracking-[0.2em] opacity-85">Categories</span>
-                      <span className="text-xl font-bold text-primary-custom tracking-tight mt-0.5">{uniqueDomains > 0 ? `${uniqueDomains} Sites` : '3 Categories'}</span>
+                      <span className="text-xs font-bold text-secondary-custom uppercase">Categories</span>
+                      <span className="text-xl font-bold text-primary-custom">{uniqueDomains > 0 ? `${uniqueDomains} Sites` : '3 Categories'}</span>
                     </div>
                   </div>
                   <div className="flex-1 w-full space-y-5">
-                    <div className="flex items-center justify-between transition-all hover:translate-x-1 duration-200">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-2.5 h-2.5 rounded-full bg-sky shadow-[0_0_8px_rgba(167,223,255,0.6)]"></div>
-                        <span className="text-sm font-semibold text-secondary-custom">Active Learning</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-sky"></div>
+                        <span className="text-sm font-medium text-secondary-custom">Active Learning</span>
                       </div>
                       <span className="text-sm font-bold text-primary-custom">{learningPct}%</span>
                     </div>
-                    <div className="flex items-center justify-between transition-all hover:translate-x-1 duration-200">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-2.5 h-2.5 rounded-full bg-lavender shadow-[0_0_8px_rgba(199,184,255,0.6)]"></div>
-                        <span className="text-sm font-semibold text-secondary-custom">Deep Focus</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-lavender"></div>
+                        <span className="text-sm font-medium text-secondary-custom">Deep Focus</span>
                       </div>
                       <span className="text-sm font-bold text-primary-custom">{deepPct}%</span>
                     </div>
-                    <div className="flex items-center justify-between transition-all hover:translate-x-1 duration-200">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="w-2.5 h-2.5 rounded-full bg-peach shadow-[0_0_8px_rgba(255,214,186,0.6)]"></div>
-                        <span className="text-sm font-semibold text-secondary-custom">Leisure Browsing</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-peach"></div>
+                        <span className="text-sm font-medium text-secondary-custom">Leisure Browsing</span>
                       </div>
                       <span className="text-sm font-bold text-primary-custom">{casualPct}%</span>
                     </div>
@@ -737,21 +685,19 @@ const Dashboard: React.FC = () => {
               </div>
 
               {/* Top Websites */}
-              <div className="glass-card p-8 animate-fade-up delay-100 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+              <div className="glass-card p-8 animate-in fade-in slide-in-from-bottom duration-300">
                 <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-xl font-bold text-primary-custom tracking-tight">Top Websites</h2>
-                  <span className="text-[10px] font-bold text-secondary-custom uppercase tracking-[0.15em]">
-                    {filter === 'today' ? "Today's Duration" : filter === 'yesterday' ? "Yesterday's Duration" : "Weekly Duration"}
-                  </span>
+                  <h2 className="text-xl font-bold text-primary-custom">Top Websites</h2>
+                  <span className="text-xs font-bold text-secondary-custom uppercase tracking-wider">Today's Duration</span>
                 </div>
                 {topWebsites && topWebsites.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {topWebsites.map((site, idx) => {
                       const faviconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${site.domain}`;
                       return (
-                        <div key={site.domain} className="flex items-center justify-between p-4 bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/5 rounded-2xl hover:bg-white/45 dark:hover:bg-white/10 hover:translate-x-1 transition-all duration-300 shadow-sm">
+                        <div key={site.domain} className="flex items-center justify-between p-4 bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/5 rounded-2xl hover:bg-white/45 dark:hover:bg-white/10 transition-all duration-300">
                           <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-10 h-10 rounded-xl bg-white/60 dark:bg-white/10 border border-white/80 dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0 shadow-sm">
+                            <div className="w-10 h-10 rounded-xl bg-white/60 dark:bg-white/10 border border-white/80 dark:border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
                               <img 
                                 src={faviconUrl} 
                                 alt={site.domain} 
@@ -770,26 +716,26 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                               <p className="text-sm font-bold text-primary-custom truncate">{site.domain}</p>
-                              <p className="text-[10px] text-secondary-custom font-semibold uppercase tracking-wider mt-0.5 opacity-80">Rank #{idx + 1}</p>
+                              <p className="text-[10px] text-secondary-custom uppercase tracking-wider mt-0.5">Rank #{idx + 1}</p>
                             </div>
                           </div>
-                          <span className="font-mono text-sm font-bold text-secondary">{formatDuration(site.duration)}</span>
+                          <span className="text-sm font-bold text-secondary">{formatDuration(site.duration)}</span>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-secondary-custom text-sm font-semibold">
-                    No top websites recorded for this range.
+                  <div className="text-center py-6 text-secondary-custom text-sm font-semibold">
+                    No top websites recorded today.
                   </div>
                 )}
               </div>
 
               {/* Attention Flow */}
-              <div className="glass-card p-8 animate-fade-up delay-150 hover-lift border border-white/40 dark:border-white/5 shadow-md">
-                <h2 className="text-xl font-bold text-primary-custom tracking-tight mb-8">Attention Flow</h2>
+              <div className="glass-card p-8">
+                <h2 className="text-xl font-bold text-primary-custom mb-8">Attention Flow</h2>
                 <div className="space-y-6">
-                  <div className="relative h-14 inner-recessed rounded-2xl overflow-hidden flex p-1 gap-1 border border-white/20">
+                  <div className="relative h-14 inner-recessed rounded-2xl overflow-hidden flex p-1 gap-1">
                     {hourlySlots.map((slot, idx) => {
                       const pct = totalActiveTime > 0 ? (slot.value / totalActiveTime) * 100 : 25;
                       const bgColors = [
@@ -801,7 +747,7 @@ const Dashboard: React.FC = () => {
                       return (
                         <div 
                           key={slot.name}
-                          className={`h-full rounded-xl flex items-center px-3 border transition-all duration-700 timeline-bar-anim ${bgColors[idx % 4]}`}
+                          className={`h-full rounded-xl flex items-center px-3 border transition-all ${bgColors[idx % 4]}`}
                           style={{ width: `${Math.max(pct, 5)}%` }}
                           title={`${slot.label}: ${formatDuration(slot.value)}`}
                         >
@@ -814,7 +760,7 @@ const Dashboard: React.FC = () => {
                       );
                     })}
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-muted-custom px-2 uppercase tracking-[0.2em] opacity-80">
+                  <div className="flex justify-between text-[10px] font-bold text-muted-custom px-2 uppercase tracking-widest opacity-80">
                     <span>09:00 AM</span>
                     <span>12:00 PM</span>
                     <span>03:00 PM</span>
@@ -826,34 +772,34 @@ const Dashboard: React.FC = () => {
 
             {/* Right Side: Internet Receipt */}
             <div className="lg:col-span-4">
-              <div className="glass-card p-8 h-full shadow-[0_24px_60px_rgba(23,32,51,0.12)] relative overflow-hidden flex flex-col transform hover:rotate-1 hover:-translate-y-1 hover:shadow-[0_30px_70px_rgba(23,32,51,0.18)] transition-all duration-500 border border-white/60 dark:border-white/10 bg-white/45 dark:bg-slate-900/45 animate-fade-up delay-200">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-primary/40 opacity-70"></div>
+              <div className="glass-card p-8 h-full shadow-2xl relative overflow-hidden flex flex-col transform hover:rotate-1 transition-transform duration-500">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-secondary opacity-25"></div>
                 <div className="text-center mb-10">
                   <p className="mono-font text-[10px] font-bold uppercase tracking-[0.3em] text-secondary-custom mb-2">SYSTEM AUDIT — {new Date().getFullYear()}</p>
-                  <h3 className="mono-font text-xl font-bold text-primary-custom tracking-wider">INTERNET RECEIPT</h3>
+                  <h3 className="mono-font text-xl font-bold text-primary-custom">INTERNET RECEIPT</h3>
                   <p className="mono-font text-[9px] text-muted-custom mt-1">SESSION_ID: LF-{Date.now().toString().slice(-3)} // TERMINAL_04</p>
                 </div>
                 <div className="flex-1 space-y-6 mono-font text-xs uppercase text-primary-custom">
                   {deepWorkTime > 0 && (
-                    <div className="flex justify-between items-end border-b border-dashed border-primary/20 pb-2">
+                    <div className="flex justify-between items-end receipt-dashed pb-2">
                       <span>Deep Focus</span>
                       <span className="font-bold">{formatDuration(deepWorkTime)}</span>
                     </div>
                   )}
                   {learningTime > 0 && (
-                    <div className="flex justify-between items-end border-b border-dashed border-primary/20 pb-2">
+                    <div className="flex justify-between items-end receipt-dashed pb-2">
                       <span>Active Learning</span>
                       <span className="font-bold">{formatDuration(learningTime)}</span>
                     </div>
                   )}
                   {casualTime > 0 && (
-                    <div className="flex justify-between items-end border-b border-dashed border-primary/20 pb-2">
+                    <div className="flex justify-between items-end receipt-dashed pb-2">
                       <span>Leisure Browsing</span>
                       <span className="font-bold">{formatDuration(casualTime)}</span>
                     </div>
                   )}
                   {totalActiveTime === 0 && (
-                    <div className="flex justify-between items-end border-b border-dashed border-primary/20 pb-2">
+                    <div className="flex justify-between items-end receipt-dashed pb-2">
                       <span>No Activity</span>
                       <span className="font-bold">0m</span>
                     </div>
@@ -864,19 +810,19 @@ const Dashboard: React.FC = () => {
                 <div className="flex gap-2 justify-center mt-6">
                   <button 
                     onClick={handleCopySummary} 
-                    className="glass-pill px-3 py-1.5 text-[10px] uppercase font-bold text-secondary-custom hover:bg-white/50 transition-all flex items-center gap-1 border border-white/50 shadow-sm"
+                    className="glass-pill px-3 py-1.5 text-[10px] uppercase font-bold text-secondary-custom hover:bg-white/40 transition-all flex items-center gap-1 border border-white/40"
                   >
                     <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'wght' 600" }}>content_copy</span> Copy Summary
                   </button>
                   <button 
                     onClick={handleSaveReceipt} 
-                    className="glass-pill px-3 py-1.5 text-[10px] uppercase font-bold text-secondary-custom hover:bg-white/50 transition-all flex items-center gap-1 border border-white/50 shadow-sm"
+                    className="glass-pill px-3 py-1.5 text-[10px] uppercase font-bold text-secondary-custom hover:bg-white/40 transition-all flex items-center gap-1 border border-white/40"
                   >
                     <span className="material-symbols-outlined text-xs" style={{ fontVariationSettings: "'wght' 600" }}>save</span> Save Receipt
                   </button>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-dashed border-primary/20">
+                <div className="mt-8 pt-6 border-t border-dashed border-primary/10">
                   <div className="flex justify-between items-center mb-6">
                     <span className="mono-font text-base font-bold text-primary-custom">TOTAL FOCUS</span>
                     <span className="mono-font text-2xl font-bold text-secondary">{focusScore}/100</span>
@@ -895,47 +841,43 @@ const Dashboard: React.FC = () => {
 
         {/* Continue Section */}
         <section className="mt-12">
-          <h2 className="text-xl font-bold text-primary-custom tracking-tight mb-8">Pick up where you left off</h2>
+          <h2 className="text-xl font-bold text-primary-custom mb-8">Pick up where you left off</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredCards.length > 0 ? (
-              filteredCards.map((card, idx) => {
-                const delays = ['delay-75', 'delay-100', 'delay-150', 'delay-200'];
-                const delayClass = delays[idx % 4];
-                return (
-                  <div 
-                    key={card.id}
-                    onClick={() => handleOpenCard(card)}
-                    className={`glass-card-sm p-4 group cursor-pointer hover:bg-white/50 transition-all hover-lift animate-fade-up ${delayClass} border border-white/40 dark:border-white/5 shadow-sm hover:shadow-md`}
-                  >
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden mb-4 relative bg-white/20 border border-white/20">
-                      <img 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                        src={card.img}
-                        alt={card.title}
-                      />
-                      <div className="absolute top-2 right-2 px-2.5 py-0.5 glass-pill text-[9px] font-bold text-primary-custom uppercase tracking-wider shadow-sm">
-                        {card.type === 'Deep Work' ? 'Deep Focus' : card.type === 'Learning' ? 'Active Learning' : card.type === 'Casual' ? 'Leisure' : card.type}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-primary-custom mb-1 truncate group-hover:text-primary transition-colors">{card.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <img 
-                          src={`https://www.google.com/s2/favicons?sz=32&domain=${getDomain(card.fullUrl)}`} 
-                          alt="" 
-                          className="w-3.5 h-3.5 object-contain rounded-sm"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                        <p className="text-[11px] text-secondary-custom truncate">{card.url}</p>
-                      </div>
+              filteredCards.map((card) => (
+                <div 
+                  key={card.id}
+                  onClick={() => handleOpenCard(card)}
+                  className="glass-card-sm p-4 group cursor-pointer hover:bg-white/50 transition-all hover:shadow-lg animate-fade-in"
+                >
+                  <div className="aspect-video w-full rounded-2xl overflow-hidden mb-4 relative bg-white/20">
+                    <img 
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                      src={card.img}
+                      alt={card.title}
+                    />
+                    <div className="absolute top-2 right-2 px-2 py-1 glass-pill text-[9px] font-bold text-primary-custom uppercase">
+                      {card.type === 'Deep Work' ? 'Deep Focus' : card.type === 'Learning' ? 'Active Learning' : card.type === 'Casual' ? 'Leisure' : card.type}
                     </div>
                   </div>
-                );
-              })
+                  <div>
+                    <p className="text-sm font-bold text-primary-custom mb-1 truncate">{card.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <img 
+                        src={`https://www.google.com/s2/favicons?sz=32&domain=${getDomain(card.fullUrl)}`} 
+                        alt="" 
+                        className="w-3.5 h-3.5 object-contain rounded-sm"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      <p className="text-[11px] text-secondary-custom truncate">{card.url}</p>
+                    </div>
+                  </div>
+                </div>
+              ))
             ) : (
-              <div className="col-span-full py-12 text-center text-secondary-custom text-sm font-semibold glass-card-sm border border-white/30">
+              <div className="col-span-full py-12 text-center text-secondary-custom text-sm font-semibold glass-card-sm">
                 No matching tabs, history, or insights found for "{searchQuery}"
               </div>
             )}
@@ -987,11 +929,11 @@ const Dashboard: React.FC = () => {
 
         {/* Footer */}
         <footer className="flex flex-col md:flex-row justify-between items-center py-10 text-muted-custom border-t border-primary/5 mt-auto">
-          <div className="mono-font text-[10px] uppercase tracking-[0.3em] mb-4 md:mb-0">© 2026 LifeLink Spatial — V2.4 • Local Sandbox Storage • No Cloud Sync</div>
+          <div className="mono-font text-[10px] uppercase tracking-[0.3em] mb-4 md:mb-0">© 2024 LifeLink Spatial — V2.4 • Local Sandbox Storage • No Cloud Sync</div>
           <div className="flex gap-10">
             <a className="mono-font text-[10px] uppercase tracking-widest hover:text-primary-custom transition-colors" href="privacy.html">Privacy</a>
-            <a className="mono-font text-[10px] uppercase tracking-widest hover:text-primary-custom transition-colors" href="terms.html">Terms</a>
-            <a className="mono-font text-[10px] uppercase tracking-widest hover:text-primary-custom transition-colors" href="status.html">System Status</a>
+            <a onClick={(e) => { e.preventDefault(); showToast('Opening Terms of Service...'); }} className="mono-font text-[10px] uppercase tracking-widest hover:text-primary-custom transition-colors" href="#">Terms</a>
+            <a onClick={(e) => { e.preventDefault(); showToast('Opening System Status dashboard...'); }} className="mono-font text-[10px] uppercase tracking-widest hover:text-primary-custom transition-colors" href="#">System Status</a>
           </div>
         </footer>
       </main>

@@ -217,99 +217,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleExportActivityData = async () => {
-    try {
-      let sessions = [];
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const res = await new Promise<any>((resolve) => {
-          chrome.storage.local.get('activitySessions', resolve);
-        });
-        sessions = res.activitySessions || [];
-      } else {
-        const saved = localStorage.getItem('activitySessions');
-        sessions = saved ? JSON.parse(saved) : [];
-      }
-
-      const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `lifelink_activity_${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast('Activity data exported successfully!');
-    } catch (err) {
-      console.error(err);
-      showToast('Export failed.', 'error');
-    }
-  };
-
-  const handleClearTodayActivity = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to clear today's activity? This will remove all tracked sessions for today."
-    );
-    if (!confirmed) return;
-
-    try {
-      const getLocalDateString = (timestamp: number): string => {
-        const date = new Date(timestamp);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      };
-      const todayStr = getLocalDateString(Date.now());
-
-      let sessions = [];
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const res = await new Promise<any>((resolve) => {
-          chrome.storage.local.get('activitySessions', resolve);
-        });
-        sessions = res.activitySessions || [];
-      } else {
-        const saved = localStorage.getItem('activitySessions');
-        sessions = saved ? JSON.parse(saved) : [];
-      }
-
-      const remainingSessions = sessions.filter((s: any) => s.date !== todayStr);
-
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        await new Promise<void>((resolve) => {
-          chrome.storage.local.set({ activitySessions: remainingSessions }, resolve);
-        });
-      }
-      localStorage.setItem('activitySessions', JSON.stringify(remainingSessions));
-
-      showToast("Cleared today's activity!");
-      window.dispatchEvent(new Event('storage'));
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to clear today's activity.", "error");
-    }
-  };
-
-  const handleClearAllActivity = async () => {
-    const confirmed = window.confirm(
-      "Are you sure you want to clear all your activity history? This will reset your metrics but preserve your settings."
-    );
-    if (!confirmed) return;
-
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        await new Promise<void>((resolve) => {
-          chrome.storage.local.set({ activitySessions: [] }, resolve);
-        });
-      }
-      localStorage.setItem('activitySessions', JSON.stringify([]));
-
-      showToast("All activity history cleared!");
-      window.dispatchEvent(new Event('storage'));
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to clear activity history.', 'error');
-    }
-  };
-
   const handleDeleteAllData = () => {
     const confirmed = window.confirm(
       'Are you absolutely sure you want to delete all LifeLink data and settings? This action is permanent.'
@@ -369,8 +276,8 @@ const Settings: React.FC = () => {
 
       <main className="pt-32 pb-24 px-container-padding-mobile md:px-container-padding-desktop max-w-7xl mx-auto z-10 relative">
         {/* Header Section */}
-        <section className="mb-12 animate-fade-up">
-          <h1 className="text-4xl font-bold text-primary-custom mb-3 tracking-tight">Your Space</h1>
+        <section className="mb-12">
+          <h1 className="text-4xl font-bold text-primary-custom mb-3">Your Space</h1>
           <p className="text-secondary-custom max-w-xl">Personalize how LifeLink nurtures your focus while keeping your digital footprint entirely yours.</p>
         </section>
 
@@ -379,17 +286,17 @@ const Settings: React.FC = () => {
           {/* Left Column: Tracking & Rules */}
           <div className="lg:col-span-7 space-y-8">
             {/* Tracking Preferences */}
-            <div className="glass-card p-8 animate-fade-up delay-75 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+            <div className="glass-card p-8">
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center border border-white/40 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary-custom">track_changes</span>
                 </div>
-                <h2 className="text-xl font-bold text-primary-custom tracking-tight">Nurture Patterns</h2>
+                <h2 className="text-xl font-bold text-primary-custom">Nurture Patterns</h2>
               </div>
               <div className="space-y-8">
-                <div className="flex items-center justify-between cursor-pointer group/toggle" onClick={() => setAwareness(!awareness)}>
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setAwareness(!awareness)}>
                   <div className="pr-8">
-                    <p className="font-semibold text-primary-custom transition-colors group-hover/toggle:text-primary">Gentle activity awareness</p>
+                    <p className="font-semibold text-primary-custom">Gentle activity awareness</p>
                     <p className="text-sm text-secondary-custom">Allow LifeLink to quietly observe your focus cycles.</p>
                   </div>
                   <button className="relative focus:outline-none" type="button">
@@ -403,11 +310,11 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
                 
-                <div className="h-px bg-black/5 dark:bg-white/5"></div>
+                <div className="h-px bg-black/5"></div>
                 
-                <div className="flex items-center justify-between cursor-pointer group/toggle" onClick={() => setIdle(!idle)}>
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setIdle(!idle)}>
                   <div className="pr-8">
-                    <p className="font-semibold text-primary-custom transition-colors group-hover/toggle:text-primary">Respect my idle time</p>
+                    <p className="font-semibold text-primary-custom">Respect my idle time</p>
                     <p className="text-sm text-secondary-custom">Automatically pause insights when you step away.</p>
                   </div>
                   <button className="relative focus:outline-none" type="button">
@@ -421,11 +328,11 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
                 
-                <div className="h-px bg-black/5 dark:bg-white/5"></div>
+                <div className="h-px bg-black/5"></div>
                 
-                <div className="flex items-center justify-between cursor-pointer group/toggle" onClick={() => setBanking(!banking)}>
+                <div className="flex items-center justify-between cursor-pointer" onClick={() => setBanking(!banking)}>
                   <div className="pr-8">
-                    <p className="font-semibold text-primary-custom transition-colors group-hover/toggle:text-primary">Sensitive context protection</p>
+                    <p className="font-semibold text-primary-custom">Sensitive context protection</p>
                     <p className="text-sm text-secondary-custom">Never observe banking or identity-related moments.</p>
                   </div>
                   <button className="relative focus:outline-none" type="button">
@@ -442,42 +349,35 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Category Rules */}
-            <div className="glass-card p-8 animate-fade-up delay-100 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+            <div className="glass-card p-8">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center border border-white/40 shadow-sm">
+                  <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                     <span className="material-symbols-outlined text-primary-custom">category</span>
                   </div>
-                  <h2 className="text-xl font-bold text-primary-custom tracking-tight">Flow Categories</h2>
+                  <h2 className="text-xl font-bold text-primary-custom">Flow Categories</h2>
                 </div>
                 <button onClick={handleAdjustAllCategories} className="text-sm text-secondary-custom font-medium hover:text-primary-custom transition-colors">Adjust All</button>
               </div>
               <div className="space-y-3">
                 {categoryRules.map((rule) => (
-                  <div key={rule.id} className="flex items-center justify-between p-5 rounded-2xl bg-white/30 border border-white/40 hover:bg-white/45 transition-all duration-300">
+                  <div key={rule.id} className="flex items-center justify-between p-5 rounded-2xl bg-white/30 border border-white/40 hover:bg-white/50 transition-all duration-300">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center border border-white/30">
-                        <span className="material-symbols-outlined text-secondary" style={{ fontSize: '18px' }}>
-                          {rule.category === 'Deep Work' || rule.category === 'Productivity' || rule.category === 'Work / Career' ? 'code' : 
-                           rule.category === 'Learning' ? 'school' : 
-                           rule.category === 'Social' ? 'forum' :
-                           rule.category === 'Shopping' ? 'shopping_bag' : 'explore'}
+                      <div className="w-10 h-10 rounded-xl bg-secondary-container/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-secondary">
+                          {rule.category === 'Deep Work' ? 'code' : 'play_circle'}
                         </span>
                       </div>
-                      <span className="font-semibold text-primary-custom">{rule.domain}</span>
+                      <span className="font-medium text-primary-custom">{rule.domain}</span>
                     </div>
                     <select 
                       value={rule.category}
                       onChange={(e) => handleUpdateRuleCategory(rule.id, e.target.value)}
-                      className="bg-white/20 dark:bg-slate-800/40 border border-white/40 dark:border-slate-700 rounded-lg text-xs font-semibold uppercase text-primary-custom px-2 py-1.5 focus:outline-none transition-all cursor-pointer hover:bg-white/45"
+                      className="bg-white/20 border border-white/40 rounded-lg text-xs font-semibold uppercase text-primary-custom px-2 py-1.5 focus:outline-none"
                     >
-                      <option value="Deep Work" className="text-black dark:text-white">Deep Focus</option>
-                      <option value="Learning" className="text-black dark:text-white">Active Learning</option>
-                      <option value="Casual" className="text-black dark:text-white">Leisure Browsing</option>
-                      <option value="Productivity" className="text-black dark:text-white">Productivity</option>
-                      <option value="Work / Career" className="text-black dark:text-white">Work / Career</option>
-                      <option value="Social" className="text-black dark:text-white">Social</option>
-                      <option value="Shopping" className="text-black dark:text-white">Shopping</option>
+                      <option value="Deep Work" className="text-black">Deep Work</option>
+                      <option value="Learning" className="text-black">Learning</option>
+                      <option value="Casual" className="text-black">Casual</option>
                     </select>
                   </div>
                 ))}
@@ -487,85 +387,40 @@ const Settings: React.FC = () => {
 
           {/* Right Column: Security & Privacy */}
           <div className="lg:col-span-5 space-y-8">
-            {/* Privacy & Data Sandbox */}
-            <div className="glass-card p-8 bg-primary/5 border border-primary/15 hover-lift animate-fade-up delay-150 shadow-md">
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-20 h-20 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center mb-4 shadow-sm border border-white/60 dark:border-slate-700">
+            {/* Trust Shield */}
+            <div className="glass-card p-8 bg-primary/5 border-primary/10">
+              <div className="flex flex-col items-center text-center mb-8">
+                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center mb-6 shadow-sm">
                   <span className="material-symbols-outlined text-4xl text-primary-custom" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
                 </div>
-                <h2 className="text-xl font-bold text-primary-custom tracking-tight mb-1">Privacy &amp; Data Sandbox</h2>
-                <p className="text-secondary-custom text-xs leading-relaxed max-w-[280px]">Your browsing activity is saved locally. We never sync to the cloud or use external APIs.</p>
+                <h2 className="text-2xl font-bold text-primary-custom mb-2">Trust Shield</h2>
+                <p className="text-secondary-custom text-sm leading-relaxed max-w-[280px]">Your data is local, encrypted, and stays within your sanctuary. We have no eyes on your life.</p>
               </div>
-
-              {/* Quick Info Checklist */}
-              <div className="mb-6 space-y-3 bg-white/20 dark:bg-white/5 border border-white/30 dark:border-white/5 p-4 rounded-2xl text-[11px] text-secondary-custom leading-snug">
-                <div>
-                  <span className="font-bold text-primary-custom uppercase tracking-wider block mb-1">✔ WHAT IS TRACKED:</span>
-                  Domain, tab title, active time, and classification category.
-                </div>
-                <div className="h-px bg-black/5 dark:bg-white/5"></div>
-                <div>
-                  <span className="font-bold text-primary-custom uppercase tracking-wider block mb-1">✖ WHAT IS NOT TRACKED:</span>
-                  Passwords, form inputs, page body content, and private/incognito windows.
-                </div>
-              </div>
-
               <div className="space-y-3">
-                <a 
-                  href="privacy.html"
-                  className="w-full py-3 px-4 pastel-button flex items-center justify-center gap-2 shadow-sm font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">shield</span>
-                  View Full Privacy Policy
-                </a>
-                
-                <div className="h-px bg-black/5 dark:bg-white/5 my-2"></div>
-                
-                <button 
-                  onClick={handleExportActivityData}
-                  className="w-full py-3 px-4 pastel-button flex items-center justify-center gap-2 shadow-sm font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">download</span>
-                  Export My Data
-                </button>
-                <button 
-                  onClick={handleClearAllActivity}
-                  className="w-full py-3 px-4 pastel-button-rose flex items-center justify-center gap-2 font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">delete_sweep</span>
-                  Delete All Activity
-                </button>
                 <button 
                   onClick={handleExportData}
-                  className="w-full py-3 px-4 pastel-button-secondary flex items-center justify-center gap-2 shadow-sm font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
+                  className="w-full py-4 px-6 pastel-button flex items-center justify-center gap-2 shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-lg">settings_backup_restore</span>
-                  Export Settings Backup
-                </button>
-                <button 
-                  onClick={handleClearTodayActivity}
-                  className="w-full py-3 px-4 pastel-button-rose flex items-center justify-center gap-2 font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">today</span>
-                  Clear Today's Activity
+                  <span className="material-symbols-outlined text-lg">download</span>
+                  Export Data Archive
                 </button>
                 <button 
                   onClick={handleDeleteAllData}
-                  className="w-full py-3 px-4 pastel-button-rose flex items-center justify-center gap-2 font-bold text-xs uppercase hover-lift active:scale-98 transition-all"
+                  className="w-full py-4 px-6 pastel-button-rose flex items-center justify-center gap-2"
                 >
-                  <span className="material-symbols-outlined text-lg">auto_delete</span>
-                  Reset Everything
+                  <span className="material-symbols-outlined text-lg">delete_sweep</span>
+                  Clear My Insights
                 </button>
               </div>
             </div>
 
             {/* Hidden Zones */}
-            <div className="glass-card p-8 animate-fade-up delay-200 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+            <div className="glass-card p-8">
               <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center border border-white/40 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary-custom">visibility_off</span>
                 </div>
-                <h2 className="text-xl font-bold text-primary-custom tracking-tight">Hidden Zones</h2>
+                <h2 className="text-xl font-bold text-primary-custom">Hidden Zones</h2>
               </div>
               <div className="space-y-6">
                 <form onSubmit={handleAddSite} className="relative">
@@ -600,18 +455,18 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Theme */}
-            <div className="glass-card p-8 animate-fade-up delay-300 hover-lift border border-white/40 dark:border-white/5 shadow-md">
+            <div className="glass-card p-8">
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center border border-white/40 shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                   <span className="material-symbols-outlined text-primary-custom">palette</span>
                 </div>
-                <h2 className="text-xl font-bold text-primary-custom tracking-tight">Ambiance</h2>
+                <h2 className="text-xl font-bold text-primary-custom">Ambiance</h2>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <button 
                   onClick={() => setTheme('pastel')}
-                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative border ${
-                    theme === 'pastel' ? 'active-card' : 'inactive-card hover:bg-white/40'
+                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative ${
+                    theme === 'pastel' ? 'active-card' : 'inactive-card'
                   }`}
                 >
                   {theme === 'pastel' && (
@@ -619,15 +474,15 @@ const Settings: React.FC = () => {
                       Selected
                     </div>
                   )}
-                  <div className="w-full aspect-video rounded-xl bg-gradient-to-br from-[#e1e1f5] to-[#baeaff] shadow-inner border border-white/30"></div>
+                  <div className="w-full aspect-video rounded-xl bg-gradient-to-br from-[#e1e1f5] to-[#baeaff] shadow-inner"></div>
                   <span className={`text-xs font-bold ${
                     theme === 'pastel' ? 'text-primary-custom' : 'text-secondary-custom/70'
                   }`}>Pastel Light</span>
                 </button>
                 <button 
                   onClick={() => setTheme('dark-glass')}
-                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative border ${
-                    theme === 'dark-glass' ? 'active-card' : 'inactive-card hover:bg-white/10'
+                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative ${
+                    theme === 'dark-glass' ? 'active-card' : 'inactive-card'
                   }`}
                 >
                   {theme === 'dark-glass' && (
@@ -635,15 +490,15 @@ const Settings: React.FC = () => {
                       Selected
                     </div>
                   )}
-                  <div className="w-full aspect-video rounded-xl bg-slate-900 shadow-inner border border-white/10"></div>
+                  <div className="w-full aspect-video rounded-xl bg-slate-900 shadow-inner"></div>
                   <span className={`text-xs font-bold ${
                     theme === 'dark-glass' ? 'text-primary-custom' : 'text-secondary-custom/70'
                   }`}>Dark Glass</span>
                 </button>
                 <button 
                   onClick={() => setTheme('system')}
-                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative border ${
-                    theme === 'system' ? 'active-card' : 'inactive-card hover:bg-white/40'
+                  className={`flex flex-col items-center gap-3 p-2.5 rounded-2xl transition-all group relative ${
+                    theme === 'system' ? 'active-card' : 'inactive-card'
                   }`}
                 >
                   {theme === 'system' && (
@@ -651,7 +506,7 @@ const Settings: React.FC = () => {
                       Selected
                     </div>
                   )}
-                  <div className="w-full aspect-video rounded-xl bg-gradient-to-tr from-gray-200 to-gray-400 shadow-inner border border-white/30"></div>
+                  <div className="w-full aspect-video rounded-xl bg-gradient-to-tr from-gray-200 to-gray-400 shadow-inner"></div>
                   <span className={`text-xs font-bold ${
                     theme === 'system' ? 'text-primary-custom' : 'text-secondary-custom/70'
                   }`}>System</span>
@@ -697,13 +552,13 @@ const Settings: React.FC = () => {
           <span className="text-[10px] text-primary/30 font-bold tracking-widest border border-primary/10 px-2 py-0.5 rounded">INTEL</span>
         </div>
         <div className="flex flex-wrap justify-center gap-10">
-          <a className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="newtab.html">Dashboard</a>
-          <a className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="privacy.html">Privacy First</a>
-          <a className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="terms.html">Terms of Harmony</a>
-          <a className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="status.html">System Status</a>
+          <a onClick={(e) => { e.preventDefault(); showToast('Opening Privacy Policy...'); }} className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="#">Privacy First</a>
+          <a onClick={(e) => { e.preventDefault(); showToast('Opening Terms of Service...'); }} className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="#">Terms of Harmony</a>
+          <a onClick={(e) => { e.preventDefault(); showToast('Opening Security Ledger audit...'); }} className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="#">Security Ledger</a>
+          <a onClick={(e) => { e.preventDefault(); showToast('Opening contact support channels...'); }} className="text-sm font-medium text-secondary-custom hover:text-primary-custom transition-colors" href="#">Reach Out</a>
         </div>
         <p className="text-xs text-muted-custom mt-4">
-          © 2026 LifeLink Intelligence. Stored locally on this device.
+          © 2024 LifeLink Intelligence. Crafted with intention.
         </p>
       </footer>
 

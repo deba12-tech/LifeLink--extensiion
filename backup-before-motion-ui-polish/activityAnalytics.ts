@@ -35,57 +35,9 @@ export const formatDuration = (ms: number): string => {
   return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 };
 
-export const mergeCloseSessions = (sessions: ActivitySession[], gapMs: number = 60000): ActivitySession[] => {
-  if (sessions.length <= 1) return sessions;
-  // Sort sessions by startTime
-  const sorted = [...sessions].sort((a, b) => a.startTime - b.startTime);
-  const merged: ActivitySession[] = [];
-  
-  for (const session of sorted) {
-    if (merged.length === 0) {
-      merged.push({ ...session });
-      continue;
-    }
-    
-    const last = merged[merged.length - 1];
-    const isSameDomain = last.domain === session.domain;
-    const isSameDate = last.date === session.date;
-    const isWithinGap = (session.startTime - last.endTime) <= gapMs;
-    
-    if (isSameDomain && isSameDate && isWithinGap) {
-      last.endTime = Math.max(last.endTime, session.endTime);
-      last.durationMs = last.endTime - last.startTime;
-    } else {
-      merged.push({ ...session });
-    }
-  }
-  
-  return merged;
-};
-
-export const calculateAnalytics = (
-  sessions: ActivitySession[],
-  filter: 'today' | 'yesterday' | 'week' = 'today',
-  targetDateString: string = getLocalDateString()
-) => {
-  // 1. Ignore sessions shorter than 5 seconds
-  const validSessions = sessions.filter(s => s.durationMs >= 5000);
-
-  // 2. Merge sessions from the same domain if they occur close together (within 60s)
-  const mergedSessions = mergeCloseSessions(validSessions, 60000);
-
-  // 3. Filter sessions for selected date range
-  let targetSessions: ActivitySession[] = [];
-  if (filter === 'today') {
-    targetSessions = mergedSessions.filter(s => s.date === targetDateString);
-  } else if (filter === 'yesterday') {
-    const yesterday = new Date(Date.now() - 86400000);
-    const yesterdayDateString = getLocalDateString(yesterday.getTime());
-    targetSessions = mergedSessions.filter(s => s.date === yesterdayDateString);
-  } else if (filter === 'week') {
-    const oneWeekAgo = Date.now() - 7 * 86400000;
-    targetSessions = mergedSessions.filter(s => s.startTime >= oneWeekAgo);
-  }
+export const calculateAnalytics = (sessions: ActivitySession[], targetDateString: string = getLocalDateString()) => {
+  // Filter sessions for target date
+  const todaySessions = sessions.filter(s => s.date === targetDateString);
 
   let totalActiveTime = 0;
   let deepWorkTime = 0;
@@ -94,9 +46,9 @@ export const calculateAnalytics = (
 
   const domainDurations: Record<string, number> = {};
 
-  targetSessions.forEach(s => {
+  todaySessions.forEach(s => {
     totalActiveTime += s.durationMs;
-    if (s.category === 'Deep Work' || s.category === 'Productivity' || s.category === 'Work / Career') {
+    if (s.category === 'Deep Work') {
       deepWorkTime += s.durationMs;
     } else if (s.category === 'Learning') {
       learningTime += s.durationMs;
@@ -135,7 +87,7 @@ export const calculateAnalytics = (
     { name: '06:00 PM', startTime: 18, endTime: 24, value: 0, label: 'Evening Session' }
   ];
 
-  targetSessions.forEach(s => {
+  todaySessions.forEach(s => {
     const date = new Date(s.startTime);
     const hour = date.getHours();
     const slot = hourlySlots.find(h => hour >= h.startTime && hour < h.endTime);
@@ -162,6 +114,6 @@ export const calculateAnalytics = (
     categoryBreakdown,
     hourlySlots,
     mainCategory,
-    todaySessionsCount: targetSessions.length
+    todaySessionsCount: todaySessions.length
   };
 };

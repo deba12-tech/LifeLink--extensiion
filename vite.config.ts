@@ -11,6 +11,9 @@ export default defineConfig({
         newtab: resolve(__dirname, 'newtab.html'),
         popup: resolve(__dirname, 'popup.html'),
         options: resolve(__dirname, 'options.html'),
+        privacy: resolve(__dirname, 'privacy.html'),
+        terms: resolve(__dirname, 'terms.html'),
+        status: resolve(__dirname, 'status.html'),
       },
       output: {
         entryFileNames: 'assets/[name]-[hash].js',

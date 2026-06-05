@@ -5,35 +5,6 @@ import { getLocalDateString, ActivitySession } from '../lib/activityAnalytics';
 
 console.log("LifeLink background loaded with message listener");
 
-export const ACTIVITY_RETENTION_DAYS = 90;
-
-export async function pruneOldSessions() {
-  if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
-    return;
-  }
-  try {
-    const result = await chrome.storage.local.get('activitySessions');
-    const sessions = (result.activitySessions as ActivitySession[]) || [];
-    const cutoffTime = Date.now() - (ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    
-    // Prune fake debug sessions AND sessions older than retention days
-    const prunedSessions = sessions.filter(s => 
-      s && 
-      s.source !== "debug" && 
-      s.title !== "Debug Test" && 
-      s.endTime >= cutoffTime
-    );
-    
-    if (prunedSessions.length !== sessions.length) {
-      await chrome.storage.local.set({ activitySessions: prunedSessions });
-      console.log(`[LifeLink] Pruned ${sessions.length - prunedSessions.length} sessions (debug/older than ${ACTIVITY_RETENTION_DAYS} days).`);
-    }
-  } catch (error) {
-    console.error("[LifeLink] Failed to prune old sessions:", error);
-  }
-}
-
-
 
 
 interface CategoryRule {
@@ -98,8 +69,8 @@ async function initializeSettings() {
   await chrome.storage.local.set({ lifelinkSettings: settings });
 }
 
-const classifyDomain = (domain: string, title: string = '', url: string = ''): string => {
-  return classifyCategory(domain, cachedRules, title, url);
+const classifyDomain = (domain: string): string => {
+  return classifyCategory(domain, cachedRules);
 };
 
 let currentSession: {
@@ -306,7 +277,7 @@ async function startTrackingCurrentTab() {
       url,
       domain,
       title: tab.title || domain,
-      category: classifyDomain(domain, tab.title || domain, url),
+      category: classifyDomain(domain),
       startTime: Date.now()
     };
   } catch (error) {
@@ -372,7 +343,6 @@ if (typeof chrome !== 'undefined') {
   if (chrome.runtime) {
     chrome.runtime.onStartup.addListener(async () => {
       await initializeSettings();
-      await pruneOldSessions();
       scheduleStartTracking();
     });
 
@@ -389,27 +359,18 @@ if (typeof chrome !== 'undefined') {
       }
       
       await initializeSettings();
-      await pruneOldSessions();
       scheduleStartTracking();
     });
   }
 
-  if (chrome.alarms) {
-    chrome.alarms.create('lifelink-daily-prune-alarm', {
-      periodInMinutes: 1440 // 24 hours
-    });
-    chrome.alarms.onAlarm.addListener((alarm) => {
-      if (alarm.name === 'lifelink-daily-prune-alarm') {
-        pruneOldSessions().catch(err => {
-          console.error("[LifeLink] Alarm prune failed:", err);
-        });
-      }
-    });
-  }
-
-  // Run cleanup unconditionally on service worker reload/boot
-  pruneOldSessions().catch(err => {
-    console.error("[LifeLink] Startup prune failed:", err);
+  // Startup Log & debug session filter cleanup
+  chrome.storage.local.get('activitySessions', (res) => {
+    const sessions = ((res.activitySessions as any[]) || []);
+    // Remove fake debug sessions if source is "debug" or title is "Debug Test"
+    const realSessions = sessions.filter(s => s && s.source !== "debug" && s.title !== "Debug Test");
+    if (realSessions.length !== sessions.length) {
+      chrome.storage.local.set({ activitySessions: realSessions });
+    }
   });
 }
 

@@ -10,6 +10,7 @@ export interface ActivitySession {
   endTime: number;
   durationMs: number;
   date: string;
+  source?: string;
 }
 
 export const getLocalDateString = (timestamp: number = Date.now()) => {

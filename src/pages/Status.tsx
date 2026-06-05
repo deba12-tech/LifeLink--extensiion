@@ -109,7 +109,7 @@ const Status: React.FC = () => {
 
     // Chrome Local Sandbox Sync
     if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['lifelinkSettings', 'activitySessions'], (res) => {
+      chrome.storage.local.get(['lifelinkSettings', 'activitySessions'], (res: any) => {
         if (res.lifelinkSettings) {
           setTrackingEnabled(res.lifelinkSettings.trackingEnabled !== false);
           setIsPaused(res.lifelinkSettings.isPaused === true);

@@ -7,30 +7,36 @@ console.log("LifeLink background loaded with message listener");
 
 export const ACTIVITY_RETENTION_DAYS = 90;
 
-export async function pruneOldSessions() {
+let sessionQueue = Promise.resolve();
+
+export async function pruneOldSessions(): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
     return;
   }
-  try {
-    const result = await chrome.storage.local.get('activitySessions');
-    const sessions = (result.activitySessions as ActivitySession[]) || [];
-    const cutoffTime = Date.now() - (ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-    
-    // Prune fake debug sessions AND sessions older than retention days
-    const prunedSessions = sessions.filter(s => 
-      s && 
-      s.source !== "debug" && 
-      s.title !== "Debug Test" && 
-      s.endTime >= cutoffTime
-    );
-    
-    if (prunedSessions.length !== sessions.length) {
-      await chrome.storage.local.set({ activitySessions: prunedSessions });
-      console.log(`[LifeLink] Pruned ${sessions.length - prunedSessions.length} sessions (debug/older than ${ACTIVITY_RETENTION_DAYS} days).`);
-    }
-  } catch (error) {
-    console.error("[LifeLink] Failed to prune old sessions:", error);
-  }
+  return new Promise<void>((resolve, reject) => {
+    sessionQueue = sessionQueue.then(async () => {
+      try {
+        const result = await chrome.storage.local.get('activitySessions');
+        const sessions = (result.activitySessions as ActivitySession[]) || [];
+        const cutoffTime = Date.now() - (ACTIVITY_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+        
+        // Prune fake debug sessions AND sessions older than retention days
+        const prunedSessions = sessions.filter(s => 
+          s && 
+          s.source !== "debug" && 
+          s.title !== "Debug Test" && 
+          s.endTime >= cutoffTime
+        );
+        
+        if (prunedSessions.length !== sessions.length) {
+          await chrome.storage.local.set({ activitySessions: prunedSessions });
+          console.log(`[LifeLink] Pruned ${sessions.length - prunedSessions.length} sessions (debug/older than ${ACTIVITY_RETENTION_DAYS} days).`);
+        }
+      } catch (error) {
+        console.error("[LifeLink] Failed to prune old sessions:", error);
+      }
+    }).then(resolve, reject);
+  });
 }
 
 
@@ -114,7 +120,6 @@ let currentSession: {
 let isPaused = false;
 let isUserIdle = false;
 let isBrowserFocused = true;
-let isStoppingSession = false;
 
 // Helper to extract domain from URL
 const getDomain = (urlStr: string): string => {
@@ -147,31 +152,36 @@ function isTrackableUrl(url: string): boolean {
 }
 
 // Save a session helper
-const saveSession = async (session: ActivitySession) => {
-  const result = await chrome.storage.local.get('activitySessions');
-  const sessions = (result.activitySessions as ActivitySession[]) || [];
-  
-  // Skip duplicate session if same url/startTime/endTime already exists
-  const isDuplicate = sessions.some(s => 
-    s.url === session.url && 
-    s.startTime === session.startTime && 
-    s.endTime === session.endTime
-  );
-  
-  if (isDuplicate) {
-    console.warn("Skipped saving duplicate session:", session);
-    return;
-  }
-  
-  sessions.push(session);
-  await chrome.storage.local.set({ activitySessions: sessions });
+const saveSession = (session: ActivitySession): Promise<void> => {
+  return new Promise<void>((resolve, reject) => {
+    sessionQueue = sessionQueue.then(async () => {
+      try {
+        const result = await chrome.storage.local.get('activitySessions');
+        const sessions = (result.activitySessions as ActivitySession[]) || [];
+        
+        // Skip duplicate session if same ID or same url/startTime already exists
+        const isDuplicate = sessions.some(s => 
+          s.id === session.id ||
+          (s.url === session.url && s.startTime === session.startTime)
+        );
+        
+        if (isDuplicate) {
+          console.warn("Skipped saving duplicate session:", session);
+          return;
+        }
+        
+        sessions.push(session);
+        await chrome.storage.local.set({ activitySessions: sessions });
+      } catch (error) {
+        console.error("[LifeLink] Failed to save session in queue:", error);
+      }
+    }).then(resolve, reject);
+  });
 };
 
 // Stop current tracking session
 const stopTracking = async (reason?: string) => {
-  if (!currentSession || isStoppingSession) return;
-
-  isStoppingSession = true;
+  if (!currentSession) return;
 
   const sessionToSave = currentSession;
   currentSession = null; // Set currentSession = null before async save
@@ -200,8 +210,6 @@ const stopTracking = async (reason?: string) => {
       console.error("Failed to save session:", e);
     }
   }
-
-  isStoppingSession = false;
 };
 
 let startTimer: any = null;

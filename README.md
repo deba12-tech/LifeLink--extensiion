@@ -33,6 +33,16 @@ Modern users spend hours inside web browsers every day, yet we rarely have a cle
 *   **🔒 Local-First Privacy**: Operates fully on-device without cloud dependencies, external telemetry, or remote server requests.
 
 ---
+## Screenshots
+
+### Dashboard
+![LifeLink Dashboard](assets/screenshots/dashboard.png)
+
+### Popup
+![LifeLink Popup](assets/screenshots/popupwindow.png)
+
+### Settings
+![LifeLink Settings](assets/screenshots/settings.png)
 
 ## 6. Architecture
 
